@@ -536,6 +536,7 @@ export default class Miniview extends Extension {
         }
     }
 
+
     _populateWindows() {
         this._windowList = [];
         let baseWindowList = global.get_window_actors();
