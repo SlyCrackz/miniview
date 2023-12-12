@@ -536,6 +536,37 @@ export default class Miniview extends Extension {
         }
     }
 
+    updateCloneSources() {
+        // Check and update the source for clone1
+        if (this._metaWin1 && !this._windowList.includes(this._metaWin1)) {
+            // The current window for clone1 is no longer available; update it
+            let newIndex1 = this.findNextAvailableWindowIndex(this._metaWin1);
+            if (newIndex1 !== -1) {
+                this.setIndex(newIndex1, 1);
+            }
+        }
+
+        // Check and update the source for clone2
+        if (this._metaWin2 && !this._windowList.includes(this._metaWin2)) {
+            // The current window for clone2 is no longer available; update it
+            let newIndex2 = this.findNextAvailableWindowIndex(this._metaWin2);
+            if (newIndex2 !== -1) {
+                this.setIndex(newIndex2, 2);
+            }
+        }
+    }
+
+    findNextAvailableWindowIndex(currentMetaWin) {
+        // Find the index of the next available window after the current one
+        let currentIndex = this._windowList.indexOf(currentMetaWin);
+        if (currentIndex === -1 || currentIndex + 1 >= this._windowList.length) {
+            return 0; // If at the end of the list, return to the beginning
+        } else {
+            return currentIndex + 1; // Return the next window
+        }
+    }
+
+
 
     _populateWindows() {
         this._windowList = [];
@@ -587,10 +618,9 @@ export default class Miniview extends Extension {
         let win = metaWin.get_compositor_private();
 
         if (!win) {
-            // Newly-created windows are added to a workspace before
-            // the compositor finds out about them...
+            // Newly-created windows are added to a workspace before the compositor finds out about them...
             this._insertTimeout = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                if (this._clone && metaWin.get_compositor_private()) {
+                if (this._clone1 && this._clone2 && metaWin.get_compositor_private()) {
                     this._insertWindow(metaWin);
                 }
                 return false;
@@ -600,27 +630,26 @@ export default class Miniview extends Extension {
         }
 
         // window already in the list?
-        if (this.lookupIndex(metaWin) != -1) {
+        if (this.lookupIndex(metaWin) !== -1) {
             return;
         }
 
-        // add to list - possibly in original place in case of cross-monitor dragging
-        if (this._lastIdx != null) {
+        // Add to list - possibly in original place in case of cross-monitor dragging
+        if (this._lastIdx !== null) {
             this._windowList.splice(this._lastIdx, 0, metaWin);
-            if (this._lastActive) {
-                this.setIndex(this._lastIdx);
-            }
-            GLib.Source.remove(this._lastTimeout);
-            this._lastIdx = null;
-            this._lastActive = null;
-            this._lastTimeout = null;
         } else {
             this._windowList.push(metaWin);
         }
 
-        // got our first window
-        if (this._showme && (this._windowList.length == 1)) {
-            this._realizeMiniview();
+        // Update sources of clones if necessary
+        this.updateCloneSources();
+
+        // Clear last index data if used
+        if (this._lastIdx !== null) {
+            GLib.Source.remove(this._lastTimeout);
+            this._lastIdx = null;
+            this._lastActive = null;
+            this._lastTimeout = null;
         }
     }
 
@@ -640,42 +669,27 @@ export default class Miniview extends Extension {
     _removeWindow(metaWin) {
         let index = this.lookupIndex(metaWin);
 
-        // not in list?
-        if (index == -1) {
+        // If not in the list, return early
+        if (index === -1) {
             return;
         }
 
-        // store index briefly, in case of dragging between monitors
-        // delay is usually about 1 millisecond in testing, so give it 100
-        this._lastIdx = index;
-        this._lastActive = (index == this._winIdx);
-        if (this._lastTimeout != null) {
-            GLib.Source.remove(this._lastTimeout);
-        }
-        this._lastTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-            this._lastIdx = null;
-            this._lastActive = null;
-            this._lastTimeout = null;
-        });
-
-        // remove from list
+        // Remove from the list
         this._windowList.splice(index, 1);
 
-        // hide if no windows
-        if (this._windowList.length == 0) {
-            this._winIdx == null;
-            this._clone.visible = false;
-            return;
-        }
+        // Update clone sources as the window list has changed
+        this.updateCloneSources();
 
-        // check if is current window and update current window index if higher
-        if (index == this._winIdx) {
-            var idx = index % this._windowList.length;
-            this.setIndex(idx); // update the window
-        } else if (index < this._winIdx) {
-            this._winIdx -= 1; // only the index, not the window itself
+        // Store the index briefly in case of dragging between monitors
+        if (this._lastIdx === null) {
+            this._lastIdx = index;
+            this._lastTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                this._lastIdx = null;
+                this._lastTimeout = null;
+            });
         }
     }
+
 
     _realizeMiniview() {
         if (this._showme) {
@@ -702,13 +716,21 @@ export default class Miniview extends Extension {
 
     _reflectState() {
         this._indicator._tsToggle.setToggleState(this._showme);
-        this._indicator.visible = this._showind;
+        // Update visibility and state of each clone based on their respective toggle states
+        this._clone1.visible = this._showme1;
+        this._clone2.visible = this._showme2;
         this._realizeMiniview();
     }
 
-    _toggleMiniview() {
-        this._showme = !this._showme;
-        this._settings.set_boolean('showme', this._showme);
+    _toggleMiniview(cloneNumber) {
+        if (cloneNumber === 1) {
+            this._showme1 = !this._showme1;
+            this._settings.set_boolean('showme1', this._showme1);
+        } else if (cloneNumber === 2) {
+            this._showme2 = !this._showme2;
+            this._settings.set_boolean('showme2', this._showme2);
+        }
+
         this._reflectState();
     }
 
