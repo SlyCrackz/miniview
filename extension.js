@@ -28,23 +28,39 @@ class MiniviewIndicator extends PanelMenu.Button {
         this.add_child(box);
 
         // on/off toggle
-        this._tsToggle = new PopupMenu.PopupSwitchMenuItem(_('Enable Miniview'), false, { style_class: 'popup-subtitle-menu-item' });
-        this._tsToggle.connect('toggled', this._onToggled.bind(this));
-        this.menu.addMenuItem(this._tsToggle);
+        this._tsToggle1 = new PopupMenu.PopupSwitchMenuItem(_('Enable Miniview 1'), false, { style_class: 'popup-subtitle-menu-item' });
+        this._tsToggle1.connect('toggled', this._onToggled1.bind(this));
+        this.menu.addMenuItem(this._tsToggle1);
+
+        this._tsToggle2 = new PopupMenu.PopupSwitchMenuItem(_('Enable Miniview 2'), false, { style_class: 'popup-subtitle-menu-item' });
+        this._tsToggle2.connect('toggled', this._onToggled2.bind(this));
+        this.menu.addMenuItem(this._tsToggle2);
 
         // cycling through windows
-        this._tsNext = new PopupMenu.PopupMenuItem(_('Next Window'));
-        this._tsNext.connect('activate', this._onNext.bind(this));
-        this.menu.addMenuItem(this._tsNext);
+        this._tsNext1 = new PopupMenu.PopupMenuItem(_('Next Window 1'));
+        this._tsNext1.connect('activate', this._onNext1.bind(this));
+        this.menu.addMenuItem(this._tsNext1);
 
-        this._tsPrev = new PopupMenu.PopupMenuItem(_('Previous Window'));
-        this._tsPrev.connect('activate', this._onPrev.bind(this));
-        this.menu.addMenuItem(this._tsPrev);
+        this._tsNext2 = new PopupMenu.PopupMenuItem(_('Next Window 2'));
+        this._tsNext2.connect('activate', this._onNext2.bind(this));
+        this.menu.addMenuItem(this._tsNext2);
+
+        this._tsPrev1 = new PopupMenu.PopupMenuItem(_('Previous Window 1'));
+        this._tsPrev1.connect('activate', this._onPrev1.bind(this));
+        this.menu.addMenuItem(this._tsPrev1);
+
+        this._tsPrev2 = new PopupMenu.PopupMenuItem(_('Previous Window 2'));
+        this._tsPrev2.connect('activate', this._onPrev2.bind(this));
+        this.menu.addMenuItem(this._tsPrev2);
 
         // reset ephemeral parameters (in case miniview got lost :) )
-        this._tsResetMiniview = new PopupMenu.PopupMenuItem(_('Reset Miniview'));
-        this._tsResetMiniview.connect('activate', this._onResetMiniview.bind(this));
-        this.menu.addMenuItem(this._tsResetMiniview);
+        this._tsResetMiniview1 = new PopupMenu.PopupMenuItem(_('Reset Miniview 1'));
+        this._tsResetMiniview1.connect('activate', this._onResetMiniview1.bind(this));
+        this.menu.addMenuItem(this._tsResetMiniview1);
+
+        this._tsResetMiniview2 = new PopupMenu.PopupMenuItem(_('Reset Miniview 2'));
+        this._tsResetMiniview2.connect('activate', this._onResetMiniview2.bind(this));
+        this.menu.addMenuItem(this._tsResetMiniview2);
 
         // extension preferences
         this._tsPreferences = new PopupMenu.PopupMenuItem(_('Preferences'));
@@ -55,28 +71,50 @@ class MiniviewIndicator extends PanelMenu.Button {
         this._prev_click_time = null;
     }
 
-    _onToggled() {
-        this._miniview._toggleMiniview();
+    _onToggled1() {
+        this._miniview._toggleMiniview(1); // Assuming _toggleMiniview method is adapted to handle specific PiP window
+    }
+    
+    _onToggled2() {
+        this._miniview._toggleMiniview(2); // Toggle the second PiP window
     }
 
-    _onNext() {
-        this._miniview._goWindowDown();
+    _onNext1() {
+        this._miniview._goWindowDown(1);
+    }
+    _onNext2() {
+        this._miniview._goWindowDown(2);
     }
 
-    _onPrev() {
-        this._miniview._goWindowUp();
+    _onPrev1() {
+        this._miniview._goWindowUp(1);
+    }
+    _onPrev2() {
+        this._miniview._goWindowUp(2);
     }
 
-    _onResetMiniview() {
-        this._miniview._clone.user_opacity = 255;
-        this._miniview._clone.opacity = 255;
-        this._miniview._clone.scale_x = 0.2;
-        this._miniview._clone.scale_y = 0.2;
-        this._miniview._clone.x = 100;
-        this._miniview._clone.y = 100;
-        this._miniview._clone.inMove = false;
-        this._miniview._clone.inResize = false;
-        this._miniview._clone.inResizeCtrl = false;
+    _onResetMiniview1() {
+        this._miniview._clone1.user_opacity = 255;
+        this._miniview._clone1.opacity = 255;
+        this._miniview._clone1.scale_x = 0.2;
+        this._miniview._clone1.scale_y = 0.2;
+        this._miniview._clone1.x = 100;
+        this._miniview._clone1.y = 100;
+        this._miniview._clone1.inMove = false;
+        this._miniview._clone1.inResize = false;
+        this._miniview._clone1.inResizeCtrl = false;
+    }
+    
+    _onResetMiniview2() {
+        this._miniview._clone2.user_opacity = 255;
+        this._miniview._clone2.opacity = 255;
+        this._miniview._clone2.scale_x = 0.2;
+        this._miniview._clone2.scale_y = 0.2;
+        this._miniview._clone2.x = 100;
+        this._miniview._clone2.y = 100;
+        this._miniview._clone2.inMove = false;
+        this._miniview._clone2.inResize = false;
+        this._miniview._clone2.inResizeCtrl = false;
     }
 });
 
@@ -313,12 +351,17 @@ export default class Miniview extends Extension {
         Main.panel.addToStatusArea('miniview', this._indicator);
 
         // the actual window clone actor
-        this._clone = new MiniviewClone(this);
-        this._clone.connect('scroll-up', this._goWindowUp.bind(this));
-        this._clone.connect('scroll-down', this._goWindowDown.bind(this));
+        this._clone1 = new MiniviewClone(this);
+        this._clone2 = new MiniviewClone(this);
 
-        // add to top level chrome
-        Main.layoutManager.addChrome(this._clone);
+        this._clone1.connect('scroll-up', this._goWindowUp.bind(this));
+        this._clone1.connect('scroll-down', this._goWindowDown.bind(this));
+        this._clone2.connect('scroll-up', this._goWindowUp.bind(this));
+        this._clone2.connect('scroll-down', this._goWindowDown.bind(this));
+
+        // Initialize both MiniviewClone instances
+        Main.layoutManager.addChrome(this._clone1);
+        Main.layoutManager.addChrome(this._clone2);
 
         // track windows as they move across monitors or are created/destroyed
         this._windowEnteredMonitorId = _display.connect('window-entered-monitor', this._windowEnteredMonitor.bind(this));
@@ -357,42 +400,74 @@ export default class Miniview extends Extension {
         // implement settings
         this._reflectState();
 
-        // restore state
-        if (this.state.metaWin != null) {
-            let idx = this.lookupIndex(this.state.metaWin);
-            if (idx == -1) { // maybe window was closed while locked?
-                idx = 0;
-                this.state.metaWin = null;
-            }
-            this.setIndex(idx);
+      // Restore state for clone1
+      if (this.state.metaWin1 != null) {
+        let idx1 = this.lookupIndex(this.state.metaWin1);
+        if (idx1 != -1) {
+            this.setIndex(idx1, 1);
         }
-        if (this.state.pos_x != null) {
-            this._clone.x = this.state.pos_x;
+        if (this.state.pos_x1 != null) {
+            this._clone1.x = this.state.pos_x1;
         }
-        if (this.state.pos_y != null) {
-            this._clone.y = this.state.pos_y;
+        if (this.state.pos_y1 != null) {
+            this._clone1.y = this.state.pos_y1;
         }
-        if (this.state.size_x != null) {
-            this._clone.scale_x = this.state.size_x;
+        if (this.state.size_x1 != null) {
+            this._clone1.scale_x = this.state.size_x1;
         }
-        if (this.state.size_y != null) {
-            this._clone.scale_y = this.state.size_y;
+        if (this.state.size_y1 != null) {
+            this._clone1.scale_y = this.state.size_y1;
         }
-        if (this.state.opacity != null) {
-            this._clone.user_opacity = this.state.opacity;
-            this._clone.opacity = this.state.opacity;
+        if (this.state.opacity1 != null) {
+            this._clone1.user_opacity = this.state.opacity1;
+            this._clone1.opacity = this.state.opacity1;
         }
+    }
+
+    // Restore state for clone2
+    if (this.state.metaWin2 != null) {
+        let idx2 = this.lookupIndex(this.state.metaWin2);
+        if (idx2 != -1) {
+            this.setIndex(idx2, 2);
+        }
+        if (this.state.pos_x2 != null) {
+            this._clone2.x = this.state.pos_x2;
+        }
+        if (this.state.pos_y2 != null) {
+            this._clone2.y = this.state.pos_y2;
+        }
+        if (this.state.size_x2 != null) {
+            this._clone2.scale_x = this.state.size_x2;
+        }
+        if (this.state.size_y2 != null) {
+            this._clone2.scale_y = this.state.size_y2;
+        }
+        if (this.state.opacity2 != null) {
+            this._clone2.user_opacity = this.state.opacity2;
+            this._clone2.opacity = this.state.opacity2;
+        }
+    }
+
     }
 
     disable() {
         // global.log('miniview: disable')
 
-        // save state
-        this.state.pos_x = this._clone.x;
-        this.state.pos_y = this._clone.y;
-        this.state.size_x = this._clone.scale_x;
-        this.state.size_y = this._clone.scale_y;
-        this.state.opacity = this._clone.user_opacity;
+        // Save state for clone1
+        this.state.metaWin1 = this._metaWin1; // Assuming _metaWin1 is being set somewhere
+        this.state.pos_x1 = this._clone1.x;
+        this.state.pos_y1 = this._clone1.y;
+        this.state.size_x1 = this._clone1.scale_x;
+        this.state.size_y1 = this._clone1.scale_y;
+        this.state.opacity1 = this._clone1.user_opacity;
+
+        // Save state for clone2
+        this.state.metaWin2 = this._metaWin2; // Assuming _metaWin2 is being set somewhere
+        this.state.pos_x2 = this._clone2.x;
+        this.state.pos_y2 = this._clone2.y;
+        this.state.size_x2 = this._clone2.scale_x;
+        this.state.size_y2 = this._clone2.scale_y;
+        this.state.opacity2 = this._clone2.user_opacity;
 
         _display.disconnect(this._windowEnteredMonitorId);
         _display.disconnect(this._windowLeftMonitorId);
@@ -423,8 +498,11 @@ export default class Miniview extends Extension {
             this._indicator.destroy();
         }
 
-        if (this._clone) {
-            this._clone.destroy();
+        if (this._clone1) {
+            this._clone1.destroy();
+        }
+        if (this._clone2) {
+            this._clone2.destroy();
         }
     }
 
@@ -437,15 +515,16 @@ export default class Miniview extends Extension {
         return -1;
     }
 
-    setIndex(idx) {
+    setIndex(idx, cloneNumber) {
         // global.log(`miniview: setIndex: index=${idx}, current=${this._winIdx}, total=${this._windowList.length}`);
 
         if ((idx >= 0) && (idx < this._windowList.length)) {
             this._winIdx = idx;
             this._metaWin = this._windowList[this._winIdx];
             let win = this._metaWin.get_compositor_private();
-            this._clone.setSource(win);
-
+            let clone = cloneNumber === 1 ? this._clone1 : this._clone2;
+            clone.setSource(win);
+            
             // necessary to not get baffled by locking shenanigans
             if (this._stateTimeout != null) {
                 GLib.Source.remove(this._stateTimeout);
@@ -477,21 +556,22 @@ export default class Miniview extends Extension {
         }
     }
 
-    _goWindowUp() {
+    _goWindowUp(cloneNumber) {
         let idx = this._winIdx + 1;
         if (idx >= this._windowList.length) {
             idx = 0;
         }
-        this.setIndex(idx);
+        this.setIndex(idx, cloneNumber);
     }
-
-    _goWindowDown() {
+    
+    _goWindowDown(cloneNumber) {
         let idx = this._winIdx - 1;
         if (idx < 0) {
             idx = this._windowList.length - 1;
         }
-        this.setIndex(idx);
+        this.setIndex(idx, cloneNumber);
     }
+    
 
     _windowEnteredMonitor(metaScreen, monitorIndex, metaWin) {
         if (metaWin.get_window_type() == Meta.WindowType.NORMAL) {
@@ -598,30 +678,26 @@ export default class Miniview extends Extension {
 
     _realizeMiniview() {
         if (this._showme) {
-            if (this._windowList.length > 0) {
-                let idx = this._winIdx;
-                if ((idx == null) || (idx >= this._windowList.length) || (idx < 0)) {
-                    idx = 0;
-                }
-                this.setIndex(idx);
-
-                if (this._hidefoc) {
-                    let activeWindow = _display.get_focus_window();
-                    if (activeWindow == this._metaWin) {
-                        this._clone.visible = false;
-                    } else {
-                        this._clone.visible = true;
-                    }
-                } else {
-                    this._clone.visible = true;
-                }
+            let activeWindow = _display.get_focus_window();
+            // Logic for PiP window 1
+            if (this._windowList.length > 0 && (this._metaWin1 !== activeWindow || !this._hidefoc)) {
+                this._clone1.visible = true;
             } else {
-                this._clone.visible = false;
+                this._clone1.visible = false;
+            }
+    
+            // Logic for PiP window 2
+            if (this._windowList.length > 0 && (this._metaWin2 !== activeWindow || !this._hidefoc)) {
+                this._clone2.visible = true;
+            } else {
+                this._clone2.visible = false;
             }
         } else {
-            this._clone.visible = false;
+            this._clone1.visible = false;
+            this._clone2.visible = false;
         }
     }
+    
 
     _reflectState() {
         this._indicator._tsToggle.setToggleState(this._showme);
